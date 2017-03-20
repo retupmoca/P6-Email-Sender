@@ -20,16 +20,18 @@ class Email::Sender {
         $s does $t;
     }
 
-    multi method send(Email::Simple $email) {
-        self.transport($email);
+    multi method send(Email::Simple $email, :$envelope-from is copy, :$envelope-to is copy) {
+        $envelope-from ||= $email.header('From');
+        $envelope-to ||= $email.header('To');
+        self.transport($email, :$envelope-from, :$envelope-to);
     }
 
-    multi method send(Str $email) {
-        self.send: Email::Simple.new($email);
+    multi method send(Str $email, :$envelope-from, :$envelope-to) {
+        self.send: Email::Simple.new($email), :$envelope-from, :$envelope-to;
     }
 
-    multi method send(*%mailstuff) {
-        self.send: self.create(|%mailstuff);
+    multi method send(:$envelope-from, :$envelope-to, *%mailstuff) {
+        self.send: self.create(|%mailstuff), :$envelope-from, :$envelope-to;
     }
 
     method create(:$to!, :$from!, :$subject!, :$text-body!, :$html-body, :@attachments) {
@@ -60,7 +62,7 @@ class Email::Sender {
         $message;
     }
 
-    method transport($email) {
+    method transport($email, :$envelope-from!, :$envelope-to!) {
         ... # implemented by transport roles
     }
 }
